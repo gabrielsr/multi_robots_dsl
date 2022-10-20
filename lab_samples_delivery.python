@@ -1,0 +1,226 @@
+"""
+Environment model
+Used to reason about to find:
+    - routes between areas
+    - nearby spots such as safe waiting points.
+"""
+world_map: IndoorMap {
+    floors: [{
+        rooms: [
+            {
+                name: 'PC 101',
+
+            }
+        ],
+        insterest_spots: [
+
+        ],
+        lanes: [{
+            type: 'Corridor',
+
+        },{
+            type: 'Room Access',
+        }],
+        intersections: [],
+    }],
+    elevators: [
+
+
+    ]
+}
+
+def get_fastest_route(point_a, point_b, criteria):
+    pass
+
+"""
+Model of a robot
+Used to reason about
+ - Capabilities
+ - Navigation / Traffic
+ - Energy Management / Battery 
+ - 
+"""
+d1 : RobotKnowledge {
+    capabilities: navigate, 
+        authenticate_staff, 
+        secure_drawer_transport
+
+    location: {
+        area: 'PC 101',
+        position: (x=??, y=??)
+    },
+    battery: Battery(level=85, capacity=600),
+    footprint: Circle(diameter=0.5),
+    assigned: 'delivery_to_lab',
+    drawers: {
+        0: [{request: '#512', sample: '#1432142'}],
+        1: [{request: '#513', sample: '#1432434'}],
+        2: free,
+
+    }
+    local_plan: [
+        sequential(
+            [
+                # past (status: 'on_going', fetch_sample('lab'), pre-conditions:[]),
+                (status: 'on_going', transport_to_lab, , pre-conditions:[]),
+                (status: 'planned', unload_on_lab, , pre-conditions:[])
+            ]
+        )
+    ],
+    trace: [
+        ('info', time: '10a.m.', 'fetch_sample', 'concluded')
+    ]
+}
+
+def check_battery(plan, battery) : [sufficient, not_sufficient]
+    pass
+
+
+
+fetch_sample: Sequential [
+    go_to(location),
+    salute(requester),
+    authenticate(requester),
+    open_free_drawer(),
+    wait_for_deposit(),
+]
+
+go_to { 
+    params(
+
+    ),
+    planned_route : [
+        (door_pc_101, face_out),
+        (corridorx, directionx, until z),
+        (corridory, x)
+        (E2_entrance)
+    ]
+}
+
+transport_to_lab: Sequential [
+    go_to('lab_entrance'),
+    queue_on('lab_unload_spot')
+]
+
+unload_on_lab: Sequential [
+    authenticate(requester),
+    open_drawer(1),
+    wait_unload(1),
+    open_drawer(2),
+    wait_unload(2)
+]
+
+
+
+
+"""
+Model representing requests, and active missions
+"""
+requests : [{
+    id: '513', status: 'on transport'
+}]
+
+active_missions : {
+    d1: { 
+        satus: 'on_going',
+        time_remaining: '8min',
+
+    }
+}
+
+
+"""
+Robot behavior
+"""
+Robot:
+    on_plan_update(assignment):
+        update_local_plan(assignment)
+    
+
+    while_active():
+        pass
+
+
+
+
+    
+"""
+    "System":
+"""
+
+def on_new_request('FetchLabSample', request, world_state): 
+    candidates = check_restrictions(robots, request)
+    assignment = select_best(candidates)
+    do_assign(assignment)
+
+
+
+"""
+Update Analyse Event
+"""
+def adapt(event):
+    update_map(knowledge, event)
+
+
+def analyse_traffic_change(event):
+    update_map(knowledge, event)
+    
+    replan(active_missions, world_map, event)
+
+
+"""
+
+"""
+def planning()
+
+
+
+
+def on_obstacle_removed(event):
+    pass
+
+
+def do_replan():
+    
+
+
+
+
+"""
+Robot
+"""
+
+
+
+
+"""
+Nurse is a user role, and uses a user api
+to create requests and check progress and
+receive notifications
+"""
+Nurse:
+    use 'user_api'
+    
+    _main_:
+        req_id = do_request(
+            'FetchLabSample',
+            by: 'Rose',
+            from_area: 'PC 101',
+        ) # 513
+        on('eventually', 
+            do:
+                progress = get_progress(req_id)
+            )
+
+event {
+    created: '10a.m'
+    entity: Elevator('E2'),
+    status: Unavailable,
+    after: 'T+30s' 
+}
+
+
+PreScheduledMonitor: # a mock monitor for creating scenarios
+    events = [event] # pre-scheduled events
+    when event.created > actual_type:
+        dispatch(event)

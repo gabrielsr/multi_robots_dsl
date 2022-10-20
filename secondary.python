@@ -1,0 +1,20 @@
+FetchLabSample: Mission {
+    param (
+        requested_by: str # person name,
+        retrieve_from: map_area_ids
+    )
+    assignment_restrictions: [
+        has_capability(robot, 'authenticate_staff'),
+        has_capability(robot, 'secure_drawer_transport'),
+        has_lock_available(robot)
+    ], 
+    plan: [
+        go_to(param.retrieve_from),
+        approach(param.requested_by),
+        authenticate(requested_by),
+        open_free_drawer(),
+        wait_for_deposit(),
+        go_to(lab_delivery_spot),
+        unload_with_robotic_arm()
+    ]
+}

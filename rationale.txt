@@ -1,0 +1,36 @@
+
+
+1. Define the Data Model
+
+- robot
+- missions
+- environment_map
+
+# events (messages, triggers)
+request
+event
+
+
+2. Define entities
+robot
+'system'
+monitor
+
+
+# we need model for:
+# navigaton
+
+# battery
+
+
+
+
+# use indexes to optimize lookup for affected missiom?
+    - cost of lookup
+    - cost of management of to indexes
+# 
+
+
+
+# 'computer interpretable' language
+

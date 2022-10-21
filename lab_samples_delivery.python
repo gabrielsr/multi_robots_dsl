@@ -4,6 +4,9 @@ Used to reason about to find:
     - routes between areas
     - nearby spots such as safe waiting points.
 """
+from dbm.ndbm import library
+
+
 world_map: IndoorMap {
     floors: [{
         rooms: [
@@ -40,24 +43,16 @@ Used to reason about
  - Energy Management / Battery 
  - 
 """
-d1 : RobotKnowledge {
-    capabilities: navigate, 
+d1 : Robot(
+    with:
+        mobile, battery_powered, assignable, tracelog
+    capabilities:
         authenticate_staff, 
         secure_drawer_transport
+    ) {
 
-    location: {
-        area: 'PC 101',
-        position: (x=??, y=??)
-    },
-    battery: Battery(level=85, capacity=600),
-    footprint: Circle(diameter=0.5),
+    # assignable
     assigned: 'delivery_to_lab',
-    drawers: {
-        0: [{request: '#512', sample: '#1432142'}],
-        1: [{request: '#513', sample: '#1432434'}],
-        2: free,
-
-    }
     local_plan: [
         sequential(
             [
@@ -67,15 +62,26 @@ d1 : RobotKnowledge {
             ]
         )
     ],
+    
+    # mobile 
+    location: {
+        area: 'PC 101',
+        position: (x=??, y=??)
+    },
+    footprint: Circle(diameter=0.5),
+
+    battery: Battery(level=85, capacity=600),
+    # secure_drawer_transport
+    drawers: { 
+        0: [{request: '#512', sample: '#1432142'}],
+        1: [{request: '#513', sample: '#1432434'}],
+        2: free,
+    }
+    # tracelog
     trace: [
         ('info', time: '10a.m.', 'fetch_sample', 'concluded')
     ]
 }
-
-def check_battery(plan, battery) : [sufficient, not_sufficient]
-    pass
-
-
 
 fetch_sample: Sequential [
     go_to(location),
@@ -132,27 +138,40 @@ active_missions : {
 """
 Robot behavior
 """
-Robot:
-    on_plan_update(assignment):
+AssignableRobot:
+    
+    library_of_skills = load_skills()
+    
+    def on_plan_update(assignment):
         update_local_plan(assignment)
     
+    # while local mission is not empty
+    def on_active(task):
+        task = get_next_task():
+        set_on_going(task)
+        skill = get_skill(library_of_skills, task)
+        intialize_skill(skill)
+        while not is_final_state(task):
+            status = tick(skill)
+            update_coordinator(status)
+            yield
 
-    while_active():
-        pass
-
-
-
+    def on_error(error):
+        update_coordinator(error)
 
     
 """
     "System":
 """
 
-def on_new_request('FetchLabSample', request, world_state): 
-    candidates = check_restrictions(robots, request)
-    assignment = select_best(candidates)
+def on_new_request(mission_type, request, world_state): 
+    robots = world_state.robots
+    mission_type = request.mission_type
+    mission_restrictions = missions[mission_type].restrictions
+    mission_plans = possible_assignments(robots, request)
+    assignment = select_best(mission_plans, mission_restrictions)
+    
     do_assign(assignment)
-
 
 
 """

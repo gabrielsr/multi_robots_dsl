@@ -1,0 +1,15 @@
+
+
+
+Problem Description:
+--------------------
+
+During the execution of a mission, errors can be found.
+Missions can define how errors are to be handled. 
+However, does how a error should be handled should be embbeded in robot code? 
+
+
+Decision
+--------
+
+No. The mission specificts should be within coordination logic. 
